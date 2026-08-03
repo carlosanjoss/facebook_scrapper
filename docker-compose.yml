@@ -1,0 +1,12 @@
+services:
+  scraper:
+    build: .
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      HEADLESS: "true"
+      SLOW_MO: "0"
+    restart: unless-stopped
+    tty: true

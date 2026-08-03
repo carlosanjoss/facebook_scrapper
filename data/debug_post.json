@@ -1,0 +1,315 @@
+{
+  "articles": [
+    {
+      "aria_label": null,
+      "inner_text_preview": "",
+      "dir_auto_elements": []
+    },
+    {
+      "aria_label": null,
+      "inner_text_preview": "",
+      "dir_auto_elements": []
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "inner_text_preview": "Carlu Thraax\nPara deus vc sempre sera a primeira opçao\n6y\nLike\nReply\n2",
+      "dir_auto_elements": [
+        {
+          "tag": "SPAN",
+          "text": "Carlu Thraax",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "SPAN",
+          "text": "Para deus vc sempre sera a primeira opçao",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "DIV",
+          "text": "Para deus vc sempre sera a primeira opçao",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "inner_text_preview": "Carlu Thraax\nVai orar\n6y\nLike\nReply\n2",
+      "dir_auto_elements": [
+        {
+          "tag": "SPAN",
+          "text": "Carlu Thraax",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "SPAN",
+          "text": "Vai orar",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "DIV",
+          "text": "Vai orar",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "inner_text_preview": "Carlu ThraaxPara deus vc sempre sera a primeira opçao6yLikeReply2",
+      "dir_auto_elements": [
+        {
+          "tag": "SPAN",
+          "text": "Carlu Thraax",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "SPAN",
+          "text": "Para deus vc sempre sera a primeira opçao",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "DIV",
+          "text": "Para deus vc sempre sera a primeira opçao",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "inner_text_preview": "Carlu ThraaxVai orar6yLikeReply2",
+      "dir_auto_elements": [
+        {
+          "tag": "SPAN",
+          "text": "Carlu Thraax",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "SPAN",
+          "text": "Vai orar",
+          "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+        },
+        {
+          "tag": "DIV",
+          "text": "Vai orar",
+          "class": ""
+        }
+      ]
+    }
+  ],
+  "headings": [
+    {
+      "tag": "H1",
+      "text": "Notifications",
+      "aria": ""
+    },
+    {
+      "tag": "H2",
+      "text": "New",
+      "aria": ""
+    },
+    {
+      "tag": "H2",
+      "text": "Earlier",
+      "aria": ""
+    },
+    {
+      "tag": "H2",
+      "text": "Facebook Menu",
+      "aria": ""
+    },
+    {
+      "tag": "H3",
+      "text": "Your shortcuts",
+      "aria": ""
+    },
+    {
+      "tag": "H1",
+      "text": "Home",
+      "aria": ""
+    },
+    {
+      "tag": "H3",
+      "text": "Create a post",
+      "aria": ""
+    },
+    {
+      "tag": "H3",
+      "text": "Stories",
+      "aria": ""
+    },
+    {
+      "tag": "H3",
+      "text": "Feed posts",
+      "aria": ""
+    },
+    {
+      "tag": "H4",
+      "text": "bugando o shape",
+      "aria": ""
+    },
+    {
+      "tag": "H2",
+      "text": "Anne Filgueiras's Post",
+      "aria": ""
+    },
+    {
+      "tag": "H3",
+      "text": "Anne Filgueiras updated her status.",
+      "aria": ""
+    }
+  ],
+  "abbr_elements": [
+    {
+      "title": "",
+      "text": "8m"
+    },
+    {
+      "title": "",
+      "text": "1d"
+    },
+    {
+      "title": "",
+      "text": "1d"
+    },
+    {
+      "title": "",
+      "text": "2d"
+    },
+    {
+      "title": "",
+      "text": "1d"
+    },
+    {
+      "title": "",
+      "text": "4d"
+    },
+    {
+      "title": "",
+      "text": "4d"
+    }
+  ],
+  "see_more_buttons": [
+    {
+      "tag": "DIV",
+      "role": "button",
+      "text": "See more",
+      "aria_label": "See more explore items",
+      "class": "x1i10hfl x1qjc9v5 xjbqb8w xjqpnuy xc5r6h4 xqeqjp1 x1phubyo x13fuv20 x18b5jzi x1q"
+    },
+    {
+      "tag": "SPAN",
+      "role": null,
+      "text": "See more",
+      "aria_label": "",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1"
+    },
+    {
+      "tag": "SPAN",
+      "role": null,
+      "text": "See more",
+      "aria_label": "",
+      "class": "x1lliihq x6ikm8r x10wlt62 x1n2onr6 xlyipyv xuxw1ft"
+    },
+    {
+      "tag": "DIV",
+      "role": "button",
+      "text": "See more",
+      "aria_label": "",
+      "class": "x1i10hfl xjbqb8w x1ejq31n x18oe1m7 x1sy0etr xstzfhl x972fbf x10w94by x1qhh985 x1"
+    }
+  ],
+  "comment_articles": [
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "text_preview": "Carlu Thraax\nPara deus vc sempre sera a primeira opçao\n6y\nLike\nReply\n2"
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "text_preview": "Carlu Thraax\nVai orar\n6y\nLike\nReply\n2"
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "text_preview": "Carlu ThraaxPara deus vc sempre sera a primeira opçao6yLikeReply2"
+    },
+    {
+      "aria_label": "Comment by Carlu Thraax 6 years ago",
+      "text_preview": "Carlu ThraaxVai orar6yLikeReply2"
+    }
+  ],
+  "dir_auto_sample": [
+    {
+      "tag": "SPAN",
+      "text": "Notifications",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "New See all",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "UnreadYou have memories to look back on today.",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "UnreadLook back on this comment from Anne Filgueiras: \"Carlos Eduardo gospelh\".",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "UnreadIs (79) 98809-8299 still your mobile number? Keep it or update to a different one.",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "UnreadYou have a new friend suggestion: Douglas Soares.",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "UnreadWâner Nogueira was tagged in a post.",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "1d·6 reactions · 1 comment",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "Unreadapiteste has a new Developer Alert: apiteste switched to live mode.",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "UnreadIs (79) 98809-8299 still your mobile number? Keep it or update to a different one.",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "See previous notifications",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "H2",
+      "text": "Facebook Menu",
+      "class": "html-h2 xdj266r x14z9mp xat24cr x1lziwak xexx8yu xyri2b x18d"
+    },
+    {
+      "tag": "SPAN",
+      "text": "Carlu Thraax",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "Your shortcuts",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    },
+    {
+      "tag": "SPAN",
+      "text": "Boyaa Pôquer (Sociedade Pôquer)",
+      "class": "x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv"
+    }
+  ]
+}
