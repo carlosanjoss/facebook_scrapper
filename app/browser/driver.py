@@ -36,6 +36,10 @@ def start_browser(headless=None):
         user_agent=_USER_AGENT,
         proxy=proxy,
         args=[
+            # Facebook occasionally negotiates HTTP/3/QUIC and then leaves the
+            # page stuck on its splash screen (or fails with
+            # ERR_CONNECTION_RESET). Force the stable TCP/TLS path.
+            "--disable-quic",
             "--disable-blink-features=AutomationControlled",
             "--disable-infobars",
             "--disable-notifications",

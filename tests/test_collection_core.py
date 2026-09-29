@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from app.storage import persist
 from app.storage.quality import enrich_post
@@ -8,6 +9,7 @@ from app.storage.schema import validate_post_for_database
 from app.extractors.comments.parsers import _parse_date, _pick_text
 from app.extractors.post import _parse_reaction_type_labels, _parse_reactions_detail
 from app.utils import parse_count, parse_facebook_datetime
+from app.navigation.navigate import navigate_to
 
 
 class CountParsingTests(unittest.TestCase):
@@ -135,6 +137,26 @@ class DatabaseSchemaTests(unittest.TestCase):
         self.assertEqual(
             post["comments"][0]["replies"][0]["parent_comment_id"],
             post["comments"][0]["comment_id"],
+        )
+
+
+class NavigationTests(unittest.TestCase):
+    @patch("app.navigation.navigate.sleep_seconds")
+    @patch("app.navigation.navigate.sleep_random")
+    @patch("app.navigation.navigate._wait_for_rendered_content")
+    def test_empty_facebook_shell_is_retried(self, wait_rendered, _sleep_random, _sleep):
+        wait_rendered.side_effect = [False, True]
+        page = Mock()
+        page.url = "https://www.facebook.com/example"
+
+        result = navigate_to(page, "https://www.facebook.com/example")
+
+        self.assertTrue(result)
+        self.assertEqual(page.goto.call_count, 2)
+        page.goto.assert_called_with(
+            "https://www.facebook.com/example",
+            wait_until="commit",
+            timeout=60000,
         )
 
 

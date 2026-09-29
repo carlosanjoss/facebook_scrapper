@@ -72,8 +72,17 @@ def collect_page(playwright_ref, url, options: RuntimeOptions):
         post_urls = collect_post_urls_from_feed(page)
         logger.info(f"URLs de posts encontradas: {len(post_urls)}")
         if not post_urls:
-            logger.warning("Nenhuma URL de post encontrada no feed.")
-            return {"status": "ok", "url": url, "page_metadata": page_metadata, "posts": []}
+            logger.warning(
+                "Nenhuma URL de post encontrada no feed; "
+                "a página será tentada novamente."
+            )
+            save_error_artifacts(page, url, "empty_feed")
+            return {
+                "status": "empty_feed",
+                "url": url,
+                "page_metadata": page_metadata,
+                "posts": [],
+            }
 
     if options.max_posts_per_page and len(post_urls) > options.max_posts_per_page:
         total_found = len(post_urls)
@@ -210,6 +219,12 @@ def collect_page_with_retry(playwright_ref, url, options: RuntimeOptions):
             result = collect_page(playwright_ref, url, options)
             if result["status"] in ("ok", "blocked_or_checkpoint", "redirect_error"):
                 return result
+            logger.warning(
+                f"Tentativa {attempt}/{MAX_RETRIES} terminou com "
+                f"status {result['status']} para {url}"
+            )
+            if attempt < MAX_RETRIES:
+                sleep_random(RETRY_DELAY_SECONDS * 0.8, RETRY_DELAY_SECONDS * 1.2)
         except Exception as e:
             playwright, context, page = playwright_ref
             if _browser_is_closed(e):

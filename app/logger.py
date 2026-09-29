@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
 
 from rich.console import Console
@@ -6,6 +8,22 @@ from rich.logging import RichHandler
 from rich.theme import Theme
 
 from app.config import LOG_DIR
+
+
+def _configure_windows_utf8_console():
+    """Prevent Rich output from crashing collectors on cp1252 consoles."""
+    if os.name != "nt":
+        return
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
+_configure_windows_utf8_console()
 
 _theme = Theme({
     "log.time":              "dim",

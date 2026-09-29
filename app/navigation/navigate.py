@@ -1,5 +1,7 @@
 import re
 
+from playwright.sync_api import Error as PlaywrightError
+
 from app.config import PAGE_WAIT_MIN, PAGE_WAIT_MAX
 from app.logger import logger
 from app.utils import sleep_random, sleep_seconds
@@ -11,6 +13,23 @@ _JS_PAUSE_VIDEO = """() => {
         v.loop = false;
     });
 }"""
+
+
+def _wait_for_rendered_content(page, timeout=30000):
+    """Wait until Facebook has rendered more than its empty splash shell."""
+    try:
+        page.wait_for_function(
+            """() => {
+                const body = document.body;
+                if (!body) return false;
+                if (document.querySelector('[role="article"]')) return true;
+                return (body.innerText || '').trim().length > 0;
+            }""",
+            timeout=timeout,
+        )
+        return True
+    except PlaywrightError:
+        return False
 
 
 def verify_on_target_page(page, expected_url):
@@ -100,7 +119,18 @@ def navigate_to(page, url):
     is_reel = '/reel/' in url.lower()
 
     for attempt in range(3):
-        page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        try:
+            # "domcontentloaded" can wait forever when a Facebook subresource
+            # stalls. "commit" plus an explicit rendered-content check is both
+            # stricter (it rejects the splash shell) and more reliable.
+            page.goto(url, wait_until="commit", timeout=60000)
+        except PlaywrightError as exc:
+            logger.warning(
+                f"Falha transitória ao abrir {url} "
+                f"({attempt + 1}/3): {str(exc).splitlines()[0]}"
+            )
+
+        rendered = _wait_for_rendered_content(page)
 
         # Pause the reel video immediately after landing — before Facebook can
         # auto-advance to an unrelated reel during the sleep below.
@@ -110,15 +140,22 @@ def navigate_to(page, url):
             except Exception:
                 pass
 
-        sleep_random(PAGE_WAIT_MIN, PAGE_WAIT_MAX)
+        if rendered:
+            sleep_random(PAGE_WAIT_MIN, PAGE_WAIT_MAX)
 
-        if verify_on_target_page(page, url):
+        if rendered and verify_on_target_page(page, url):
             return True
 
-        logger.warning(
-            f"Redirecionado para {page.url} — "
-            f"tentando novamente ({attempt + 1}/3)"
-        )
+        if not rendered:
+            logger.warning(
+                "Facebook não terminou de renderizar a página "
+                f"— tentando novamente ({attempt + 1}/3)"
+            )
+        else:
+            logger.warning(
+                f"Redirecionado para {page.url} — "
+                f"tentando novamente ({attempt + 1}/3)"
+            )
         sleep_seconds(2)
 
     logger.error(f"Não foi possível manter a navegação em: {url}")
