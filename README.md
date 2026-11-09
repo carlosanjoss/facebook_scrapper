@@ -4,6 +4,26 @@ Scraper automatizado de posts e comentários do Facebook, desenvolvido para pesq
 
 Coleta de forma contínua e incremental posts e comentários de páginas públicas. Usa Playwright (Chromium persistente) para simular um navegador real com sessão autenticada, extraindo dados via JavaScript e locators do DOM.
 
+## Início rápido no Windows
+
+No PowerShell, dentro da pasta do projeto:
+
+```powershell
+# Prepara Python 3.11, dependências, Chromium e .env
+.\setup.ps1
+
+# Abre o Facebook para fazer login (necessário apenas na primeira vez)
+.\run.ps1 -Login
+
+# Teste rápido: uma origem, um post, sem comentários
+.\run.ps1 -Once -LimitPages 1 -LimitPosts 1 -NoComments
+
+# Coleta normal conforme o .env
+.\run.ps1
+```
+
+O `run.ps1` executa o setup automaticamente se o ambiente `.venv` ainda não existir. O projeto usa Python 3.11 para evitar depender da versão global instalada no Windows.
+
 ---
 
 ## Sumário
@@ -102,20 +122,21 @@ facebook_scrapper/
 
 ## Instalação
 
-**Pré-requisitos:** Python 3.10+, Git
+**Pré-requisitos:** Python 3.11 (recomendado), Git
 
-```bash
+```powershell
 # Clonar e criar ambiente virtual
-python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # Linux / macOS
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
 # Instalar dependências
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
-# Instalar o Chromium do Playwright
-playwright install chromium
+# Instalar o Chromium compatível com a versão do Playwright
+python -m playwright install chromium
 ```
+
+No Windows, o caminho mais simples e validado é executar `./setup.ps1`, que faz essas etapas automaticamente.
 
 Copie o arquivo de exemplo e ajuste:
 
@@ -216,6 +237,9 @@ python -m app.main --once
 # Limitar posts por página nesta execução (0 = sem limite)
 python -m app.main --limit-posts 5
 
+# Limitar quantas URLs de origem serão processadas (útil para teste rápido)
+python -m app.main --limit-pages 1
+
 # Coletar apenas metadados, sem comentários (mais rápido para smoke test)
 python -m app.main --no-comments
 
@@ -235,6 +259,7 @@ python -m app.main --once --no-comments --limit-posts 3
 | Argumento | Default | Descrição |
 |---|---|---|
 | `--once` | — | Um ciclo e encerra, ignorando `CONTINUOUS_MODE` |
+| `--limit-pages N` | `0` | Máx. de URLs de origem no ciclo (`0` = sem limite) |
 | `--limit-posts N` | `MAX_POSTS_PER_PAGE` | Máx. de posts por página nesta execução |
 | `--no-comments` | — | Pula a coleta de comentários |
 | `--no-export` | — | Não gera JSONL/CSV ao final |
@@ -569,4 +594,3 @@ O fluxo de reels é separado do fluxo de posts/fotos: pausa o vídeo, abre o pai
 ## Contexto acadêmico
 
 Este scraper foi desenvolvido para o projeto **Radar Ódio**, pesquisa de mestrado que analisa padrões de discurso de ódio em comentários de páginas de segurança pública no Facebook. Os dados coletados são utilizados exclusivamente para fins de pesquisa acadêmica.
-

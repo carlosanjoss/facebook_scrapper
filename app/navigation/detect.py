@@ -44,6 +44,8 @@ def _is_direct_content_url(url: str) -> bool:
 
         if path.startswith('/reel/'):
             return True
+        if path.startswith(('/share/r/', '/share/v/', '/share/p/')):
+            return True
         if path == '/photo':
             return True
         if path in ('/watch', '/watch/') or path.startswith('/watch/'):

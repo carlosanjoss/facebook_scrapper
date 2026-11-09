@@ -1,6 +1,6 @@
 ﻿import time
 
-from app.browser import start_browser, close_browser
+from app.browser import BrowserStartupError, start_browser, close_browser
 from app.collector.cycle import run_cycle
 from app.collector.options import parse_args, build_runtime_options, load_links
 from app.config import CONTINUOUS_INTERVAL_MINUTES
@@ -13,7 +13,14 @@ def main(argv=None):
     args = parse_args(argv)
     options = build_runtime_options(args)
 
-    links = load_links()
+    try:
+        links = load_links()
+    except (OSError, UnicodeError) as exc:
+        logger.error(str(exc))
+        return 2
+
+    if options.max_pages_per_cycle:
+        links = links[:options.max_pages_per_cycle]
 
     if not links:
         logger.warning("Nenhum link encontrado em data/input/links.txt")
@@ -42,7 +49,11 @@ def main(argv=None):
     cycle = 0
 
     try:
-        playwright, context, page = start_browser()
+        try:
+            playwright, context, page = start_browser()
+        except BrowserStartupError as exc:
+            logger.error(str(exc))
+            return 2
         playwright_ref = [playwright, context, page]
 
         while True:
@@ -74,7 +85,10 @@ def main(argv=None):
     finally:
         playwright, context, page = playwright_ref
         if playwright and context:
-            close_browser(playwright, context)
+            try:
+                close_browser(playwright, context)
+            except Exception as exc:
+                logger.warning(f"Falha ao fechar o navegador: {exc}")
         lock.release()
 
 

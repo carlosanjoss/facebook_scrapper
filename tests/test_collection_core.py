@@ -4,10 +4,13 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from app.storage import persist
+from app.browser.scroller import scroll_page
+from app.collector.options import build_runtime_options, load_links, parse_args
 from app.storage.quality import enrich_post
 from app.storage.schema import validate_post_for_database
 from app.extractors.comments.parsers import _parse_date, _pick_text
 from app.extractors.post import _parse_reaction_type_labels, _parse_reactions_detail
+from app.navigation import _is_direct_content_url, verify_on_target_page
 from app.utils import parse_count, parse_facebook_datetime
 from app.navigation.navigate import navigate_to, verify_on_target_page
 from app.collector.page import _browser_needs_restart, collect_page_with_retry
@@ -31,6 +34,60 @@ class CountParsingTests(unittest.TestCase):
         self.assertEqual(detail["like"], 1234)
         self.assertEqual(detail["love"], 95)
         self.assertEqual(detail["total"], 1329)
+
+
+class InputAndNavigationTests(unittest.TestCase):
+    def test_load_links_normalizes_and_deduplicates(self):
+        path = Path(self.tmp.name) / "links.txt"
+        path.write_text(
+            "# comentário\n"
+            "facebook.com/reel/123\n"
+            "facebook.com/reel/123\n"
+            "https://example.com/invalido\n",
+            encoding="utf-8",
+        )
+
+        self.assertEqual(load_links(path), ["https://facebook.com/reel/123"])
+
+    def test_share_link_is_direct_content(self):
+        self.assertTrue(_is_direct_content_url("https://www.facebook.com/share/r/abc/"))
+
+    def test_share_redirect_to_canonical_reel_is_valid(self):
+        page = type("Page", (), {"url": "https://www.facebook.com/reel/123"})()
+
+        self.assertTrue(
+            verify_on_target_page(page, "https://www.facebook.com/share/r/abc/")
+        )
+
+    def test_limit_pages_is_available_to_smoke_tests(self):
+        options = build_runtime_options(parse_args(["--once", "--limit-pages", "1"]))
+
+        self.assertEqual(options.max_pages_per_cycle, 1)
+
+    def test_feed_scroll_stops_after_requested_article_count(self):
+        class FakePage:
+            def __init__(self):
+                self.calls = 0
+
+            def evaluate(self, script, *args):
+                self.calls += 1
+                return {
+                    "moved": True,
+                    "arts": 3,
+                    "height": 1000,
+                    "atBottom": False,
+                }
+
+        page = FakePage()
+        scroll_page(page, max_articles=1)
+
+        self.assertEqual(page.calls, 1)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmp.cleanup()
 
 
 class StorageTests(unittest.TestCase):

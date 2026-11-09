@@ -23,7 +23,7 @@ USER_DATA_DIR = SESSIONS_DIR / "facebook_chrome_profile"
 LOCK_FILE = STATE_DIR / "collector.lock"
 
 # Browser
-HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
+HEADLESS = os.getenv("HEADLESS", "false").lower() == "true"
 SLOW_MO = int(os.getenv("SLOW_MO", "80"))
 BROWSER_EXECUTABLE_PATH = os.getenv("BROWSER_EXECUTABLE_PATH") or None
 

@@ -131,6 +131,7 @@ def run_cycle(playwright_ref, links, options: RuntimeOptions, cycle: int):
         "finished_at": now_iso(),
         "options": {
             "continuous_mode": options.continuous_mode,
+            "max_pages_per_cycle": options.max_pages_per_cycle,
             "max_posts_per_page": options.max_posts_per_page,
             "collect_comments": options.collect_comments,
             "skip_recent_empty_hours": options.skip_recent_empty_hours,

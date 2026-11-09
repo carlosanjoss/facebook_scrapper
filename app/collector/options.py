@@ -1,5 +1,8 @@
 import argparse
+import logging
 from dataclasses import dataclass
+from pathlib import Path
+from urllib.parse import urlsplit
 
 from app.config import (
     CONTINUOUS_MODE,
@@ -9,10 +12,13 @@ from app.config import (
     SKIP_RECENT_EMPTY_HOURS,
 )
 
+logger = logging.getLogger("facebook_scraper")
+
 
 @dataclass
 class RuntimeOptions:
     continuous_mode: bool
+    max_pages_per_cycle: int
     max_posts_per_page: int
     skip_recent_empty_hours: int
     collect_comments: bool
@@ -33,6 +39,12 @@ def parse_args(argv=None):
         type=int,
         default=None,
         help="Limit posts processed per page in this run. Use 0 for no limit.",
+    )
+    parser.add_argument(
+        "--limit-pages",
+        type=int,
+        default=0,
+        help="Limit source URLs processed in this run. Use 0 for no limit.",
     )
     parser.add_argument(
         "--skip-recent-empty-hours",
@@ -61,6 +73,8 @@ def parse_args(argv=None):
 
     if args.limit_posts is not None and args.limit_posts < 0:
         parser.error("--limit-posts must be >= 0")
+    if args.limit_pages < 0:
+        parser.error("--limit-pages must be >= 0")
     if args.skip_recent_empty_hours < 0:
         parser.error("--skip-recent-empty-hours must be >= 0")
     if args.restart_browser_every_posts < 0:
@@ -72,6 +86,7 @@ def parse_args(argv=None):
 def build_runtime_options(args) -> RuntimeOptions:
     return RuntimeOptions(
         continuous_mode=CONTINUOUS_MODE and not args.once,
+        max_pages_per_cycle=args.limit_pages,
         max_posts_per_page=(
             args.limit_posts if args.limit_posts is not None else MAX_POSTS_PER_PAGE
         ),
@@ -82,11 +97,38 @@ def build_runtime_options(args) -> RuntimeOptions:
     )
 
 
-def load_links():
-    with open(LINKS_FILE, "r", encoding="utf-8") as file:
-        links = [
-            line.strip()
-            for line in file.readlines()
-            if line.strip() and not line.strip().startswith("#")
-        ]
+def load_links(path=LINKS_FILE):
+    """Load, validate, normalize and deduplicate Facebook URLs."""
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Arquivo de links não encontrado: {path}. "
+            "Crie o arquivo e adicione uma URL do Facebook por linha."
+        )
+
+    links = []
+    seen = set()
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    for line_number, raw_line in enumerate(lines, 1):
+        value = raw_line.strip()
+        if not value or value.startswith("#"):
+            continue
+
+        if "://" not in value:
+            value = f"https://{value}"
+
+        parsed = urlsplit(value)
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        is_facebook = hostname == "facebook.com" or hostname.endswith(".facebook.com")
+        if parsed.scheme.lower() not in {"http", "https"} or not is_facebook:
+            logger.warning(
+                f"Linha {line_number} ignorada em {path}: "
+                f"URL do Facebook inválida ({raw_line.strip()})"
+            )
+            continue
+
+        if value not in seen:
+            seen.add(value)
+            links.append(value)
+
     return links

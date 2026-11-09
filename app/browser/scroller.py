@@ -31,8 +31,8 @@ _JS_SMART_SCROLL = """(step) => {
 }"""
 
 
-def scroll_page(page, step=900):
-    """Scroll the page (or best scrollable container) until stable."""
+def scroll_page(page, step=900, max_articles=0):
+    """Scroll until stable or until the requested number of articles is visible."""
     last_height = 0
     stable_count = 0
     at_bottom_count = 0
@@ -44,8 +44,12 @@ def scroll_page(page, step=900):
             m = {}
 
         moved     = m.get("moved", False)
+        articles  = m.get("arts", 0)
         cur_h     = m.get("height", 0)
         at_bottom = m.get("atBottom", False)
+
+        if max_articles and articles >= max_articles:
+            break
 
         deadline = time.time() + SCROLL_DELAY_SECONDS
         while time.time() < deadline:
