@@ -1,4 +1,5 @@
 import re
+from urllib.parse import parse_qs, unquote, urlparse
 
 from playwright.sync_api import Error as PlaywrightError
 
@@ -32,8 +33,41 @@ def _wait_for_rendered_content(page, timeout=30000):
         return False
 
 
+def _content_id(url):
+    """Return the stable Facebook content id present in a post-like URL."""
+    parsed = urlparse(url)
+    path = unquote(parsed.path).lower().rstrip("/")
+    query = parse_qs(parsed.query)
+
+    for key in ("story_fbid", "fbid", "v"):
+        values = query.get(key)
+        if values and values[0]:
+            return values[0].lower()
+
+    for pattern in (
+        r"/reel/([^/?#]+)",
+        r"/posts/([^/?#]+)",
+        r"/videos/(?:[^/?#]+/)?([^/?#]+)",
+    ):
+        match = re.search(pattern, path)
+        if match:
+            return match.group(1).lower()
+    return None
+
+
+def _page_slug(url):
+    parsed = urlparse(url)
+    parts = [part for part in parsed.path.lower().split("/") if part]
+    return parts[0] if parts else ""
+
+
 def verify_on_target_page(page, expected_url):
-    """Return False if Facebook silently redirected away from the target URL."""
+    """Return False if Facebook silently redirected away from the target URL.
+
+    Content URLs are compared by their stable post/video id.  Checking only
+    for a generic ``/posts/`` or ``/photo/`` path is unsafe because Facebook
+    can auto-advance or a comment-expansion click can open another post.
+    """
     current = page.url.lower().rstrip("/")
 
     home_variants = {
@@ -45,24 +79,20 @@ def verify_on_target_page(page, expected_url):
     if current in home_variants:
         return False
 
+    current_path = urlparse(current).path.lower()
+    if any(part in current_path for part in ("/login", "/checkpoint", "/recover")):
+        return False
+
     expected_lower = expected_url.lower()
 
-    # For reels, verify the specific reel ID — Facebook auto-advances to unrelated reels
-    # so checking only that "/reel/" appears in the expected URL is not enough.
-    if '/reel/' in expected_lower:
-        m = re.search(r'/reel/(\d+)', expected_lower)
-        if m:
-            return m.group(1) in current
-        return '/reel/' in current
+    expected_content_id = _content_id(expected_lower)
+    if expected_content_id:
+        current_content_id = _content_id(current)
+        return current_content_id == expected_content_id
 
-    if any(p in expected_lower for p in ["/posts/", "story_fbid", "/photo/", "/videos/", "/watch/"]):
-        return True
-
-    parts = expected_lower.rstrip("/").split("facebook.com/")
-    if len(parts) > 1:
-        slug = parts[1].split("/")[0].split("?")[0]
-        if slug and slug not in current:
-            return False
+    slug = _page_slug(expected_lower)
+    if slug and slug != _page_slug(current):
+        return False
 
     return True
 

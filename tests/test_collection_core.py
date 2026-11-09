@@ -9,7 +9,8 @@ from app.storage.schema import validate_post_for_database
 from app.extractors.comments.parsers import _parse_date, _pick_text
 from app.extractors.post import _parse_reaction_type_labels, _parse_reactions_detail
 from app.utils import parse_count, parse_facebook_datetime
-from app.navigation.navigate import navigate_to
+from app.navigation.navigate import navigate_to, verify_on_target_page
+from app.collector.page import _browser_needs_restart, collect_page_with_retry
 
 
 class CountParsingTests(unittest.TestCase):
@@ -141,6 +142,57 @@ class DatabaseSchemaTests(unittest.TestCase):
 
 
 class NavigationTests(unittest.TestCase):
+    def test_different_post_is_not_accepted_as_target(self):
+        page = Mock()
+        page.url = "https://www.facebook.com/example/posts/pfbidOUTRO"
+
+        self.assertFalse(
+            verify_on_target_page(
+                page,
+                "https://www.facebook.com/example/posts/pfbidESPERADO",
+            )
+        )
+
+    def test_same_post_with_tracking_query_is_accepted(self):
+        page = Mock()
+        page.url = "https://www.facebook.com/example/posts/12345?__cft__=tracking"
+
+        self.assertTrue(
+            verify_on_target_page(page, "https://www.facebook.com/example/posts/12345")
+        )
+
+    def test_different_photo_is_not_accepted_as_target(self):
+        page = Mock()
+        page.url = "https://www.facebook.com/photo/?fbid=999"
+
+        self.assertFalse(
+            verify_on_target_page(page, "https://www.facebook.com/photo/?fbid=123")
+        )
+
+    def test_reel_auto_advance_is_not_accepted_as_target(self):
+        page = Mock()
+        page.url = "https://www.facebook.com/reel/222"
+
+        self.assertFalse(
+            verify_on_target_page(page, "https://www.facebook.com/reel/111")
+        )
+
+    def test_video_canonicalization_keeps_same_content(self):
+        page = Mock()
+        page.url = "https://www.facebook.com/watch/?v=123"
+
+        self.assertTrue(
+            verify_on_target_page(page, "https://www.facebook.com/example/videos/123")
+        )
+
+    def test_login_redirect_is_not_accepted_as_target(self):
+        page = Mock()
+        page.url = "https://www.facebook.com/login/?next=%2Fexample"
+
+        self.assertFalse(
+            verify_on_target_page(page, "https://www.facebook.com/example")
+        )
+
     @patch("app.navigation.navigate.sleep_seconds")
     @patch("app.navigation.navigate.sleep_random")
     @patch("app.navigation.navigate._wait_for_rendered_content")
@@ -158,6 +210,40 @@ class NavigationTests(unittest.TestCase):
             wait_until="commit",
             timeout=60000,
         )
+
+
+class BrowserCrashRecoveryTests(unittest.TestCase):
+    def test_target_crashed_requires_browser_restart(self):
+        error = RuntimeError("Page.add_init_script: Target crashed")
+
+        self.assertTrue(_browser_needs_restart(error))
+
+    def test_regular_collection_error_does_not_require_browser_restart(self):
+        self.assertFalse(_browser_needs_restart(RuntimeError("selector not found")))
+
+    @patch("app.collector.page.install_cleaner")
+    @patch("app.collector.page.restart_browser_in_place")
+    @patch("app.collector.page.collect_page")
+    def test_crashed_page_is_restarted_and_same_url_is_retried(
+        self, collect_page, restart_browser, install_cleaner
+    ):
+        recovered_page = Mock()
+        restart_browser.return_value = recovered_page
+        collect_page.side_effect = [
+            RuntimeError("Page.add_init_script: Target crashed"),
+            {"status": "ok", "url": "https://www.facebook.com/example", "posts": []},
+        ]
+        playwright_ref = [Mock(), Mock(), Mock()]
+        options = Mock()
+
+        result = collect_page_with_retry(
+            playwright_ref, "https://www.facebook.com/example", options
+        )
+
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(collect_page.call_count, 2)
+        restart_browser.assert_called_once_with(playwright_ref)
+        install_cleaner.assert_called_once_with(recovered_page)
 
 
 if __name__ == "__main__":

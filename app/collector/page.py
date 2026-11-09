@@ -22,6 +22,7 @@ from app.extractors.post import (
 from app.logger import logger, console
 from app.navigation import (
     navigate_to,
+    verify_on_target_page,
     detect_block_or_checkpoint,
     _is_direct_content_url,
     save_error_artifacts,
@@ -46,6 +47,17 @@ def restart_browser_in_place(playwright_ref):
     return page
 
 
+def _target_was_lost(page, post_url, stage):
+    """Log when Facebook moved away from the post being collected."""
+    if verify_on_target_page(page, post_url):
+        return False
+    logger.warning(
+        "Facebook saiu do post durante "
+        f"{stage}: esperado={post_url} atual={page.url}"
+    )
+    return True
+
+
 def collect_page(playwright_ref, url, options: RuntimeOptions):
     page = playwright_ref[2]
     started_at = time.time()
@@ -68,8 +80,23 @@ def collect_page(playwright_ref, url, options: RuntimeOptions):
         post_urls = [url]
     else:
         logger.info("Scrollando feed para carregar posts...")
-        scroll_page(page)
-        post_urls = collect_post_urls_from_feed(page)
+        post_urls = []
+        for feed_attempt in range(1, MAX_RETRIES + 1):
+            if feed_attempt > 1 and not navigate_to(page, url):
+                continue
+            scroll_page(page)
+            if _target_was_lost(page, url, "a rolagem do feed"):
+                if feed_attempt < MAX_RETRIES:
+                    logger.info(
+                        "Voltando à página original para refazer a leitura do feed "
+                        f"({feed_attempt + 1}/{MAX_RETRIES})..."
+                    )
+                continue
+            candidate_urls = collect_post_urls_from_feed(page)
+            if _target_was_lost(page, url, "a leitura dos links do feed"):
+                continue
+            post_urls = candidate_urls
+            break
         logger.info(f"URLs de posts encontradas: {len(post_urls)}")
         if not post_urls:
             logger.warning(
@@ -97,7 +124,6 @@ def collect_page(playwright_ref, url, options: RuntimeOptions):
     new_posts_count = 0
     skipped = 0
     failed_posts = []
-    processed_since_restart = 0
 
     _bar = Progress(
         SpinnerColumn(style="cyan"),
@@ -130,38 +156,87 @@ def collect_page(playwright_ref, url, options: RuntimeOptions):
                 skipped += 1
                 continue
 
-            if not navigate_to(page, post_url):
-                save_error_artifacts(page, post_url, "navigate_failed")
-                failed_posts.append({"post_url": post_url, "stage": "navigate"})
-                logger.warning("  → Sem acesso, pulando.")
-                continue
+            post_data = None
+            comments = []
+            failed_stage = "navigate"
+            checkpoint_found = False
 
-            if detect_block_or_checkpoint(page):
-                save_error_artifacts(page, post_url, "checkpoint")
-                logger.warning("Checkpoint detectado — parando coleta.")
+            # Facebook sometimes auto-advances reels or follows a link while
+            # comments are being expanded.  Discard that partial attempt,
+            # reopen the exact URL and collect the post again from the start.
+            for recovery_attempt in range(1, MAX_RETRIES + 1):
+                if not navigate_to(page, post_url):
+                    failed_stage = "navigate"
+                    continue
+
+                if detect_block_or_checkpoint(page):
+                    save_error_artifacts(page, post_url, "checkpoint")
+                    logger.warning("Checkpoint detectado — parando coleta.")
+                    checkpoint_found = True
+                    break
+
+                pre_meta = snapshot_page_metadata(page)
+                if _target_was_lost(page, post_url, "a leitura dos metadados"):
+                    failed_stage = "metadata_drift"
+                    continue
+
+                expand_see_more_on_post_page(page)
+                if _target_was_lost(page, post_url, "a expansão do texto"):
+                    failed_stage = "text_expansion_drift"
+                    continue
+
+                candidate = collect_post_data_from_page(
+                    page, post_url, i + 1, pre_meta=pre_meta
+                )
+                if _target_was_lost(page, post_url, "a coleta do post"):
+                    failed_stage = "post_collection_drift"
+                    continue
+
+                if '/reel/' not in post_url.lower():
+                    scroll_page(page)
+                    if _target_was_lost(page, post_url, "a rolagem"):
+                        failed_stage = "scroll_drift"
+                        continue
+
+                if options.collect_comments:
+                    candidate_comments = collect_comments_from_post_page(
+                        page, post_text=candidate.get("text", ""), post_url=post_url
+                    )
+                else:
+                    candidate_comments = []
+
+                if _target_was_lost(page, post_url, "a coleta dos comentários"):
+                    failed_stage = "comments_drift"
+                    if recovery_attempt < MAX_RETRIES:
+                        logger.info(
+                            "  → Voltando ao post original e reiniciando "
+                            f"({recovery_attempt + 1}/{MAX_RETRIES})..."
+                        )
+                    continue
+
+                post_data = candidate
+                comments = candidate_comments
+                post_data["comments"] = comments
                 break
 
-            pre_meta = snapshot_page_metadata(page)
-            expand_see_more_on_post_page(page)
-            post_data = collect_post_data_from_page(page, post_url, i + 1, pre_meta=pre_meta)
+            if checkpoint_found:
+                break
 
-            if '/reel/' not in post_url.lower():
-                scroll_page(page)
-
-            if options.collect_comments:
-                comments = collect_comments_from_post_page(
-                    page, post_text=post_data.get("text", ""), post_url=post_url
+            if post_data is None:
+                save_error_artifacts(page, post_url, failed_stage)
+                failed_posts.append({"post_url": post_url, "stage": failed_stage})
+                logger.warning(
+                    "  → Não foi possível manter o post aberto após "
+                    f"{MAX_RETRIES} tentativas; pulando."
                 )
-            else:
-                comments = []
-            post_data["comments"] = comments
+                continue
 
             _, is_new = save_post_incremental(url, post_data, page_metadata)
             if is_new:
                 new_posts_count += 1
 
             posts.append(post_data)
-            processed_since_restart += 1
+            options.processed_posts_since_restart += 1
             logger.info(
                 f"  → {len(post_data.get('text', ''))} chars · "
                 f"{len(comments)} coment. · "
@@ -170,13 +245,14 @@ def collect_page(playwright_ref, url, options: RuntimeOptions):
 
             if (
                 options.restart_browser_every_posts
-                and processed_since_restart >= options.restart_browser_every_posts
+                and options.processed_posts_since_restart
+                >= options.restart_browser_every_posts
                 and i + 1 < len(post_urls)
             ):
-                logger.info("Reiniciando browser...")
+                logger.info("Reiniciando browser preventivamente...")
                 page = restart_browser_in_place(playwright_ref)
                 install_cleaner(page)
-                processed_since_restart = 0
+                options.processed_posts_since_restart = 0
 
     total_comments = sum(len(p.get("comments", [])) for p in posts)
     logger.info(
@@ -197,17 +273,22 @@ def collect_page(playwright_ref, url, options: RuntimeOptions):
     }
 
 
-_BROWSER_CLOSED_SIGNALS = (
+_BROWSER_RESTART_SIGNALS = (
+    "target crashed",
+    "page crashed",
     "target page, context or browser has been closed",
     "browser has been closed",
     "target closed",
     "context or browser has been closed",
+    "connection closed while reading from the driver",
+    "playwright connection closed",
 )
 
 
-def _browser_is_closed(exc):
+def _browser_needs_restart(exc):
+    """Return True when the current Playwright page/context cannot be reused."""
     msg = str(exc).lower()
-    return any(sig in msg for sig in _BROWSER_CLOSED_SIGNALS)
+    return any(sig in msg for sig in _BROWSER_RESTART_SIGNALS)
 
 
 def collect_page_with_retry(playwright_ref, url, options: RuntimeOptions):
@@ -227,19 +308,14 @@ def collect_page_with_retry(playwright_ref, url, options: RuntimeOptions):
                 sleep_random(RETRY_DELAY_SECONDS * 0.8, RETRY_DELAY_SECONDS * 1.2)
         except Exception as e:
             playwright, context, page = playwright_ref
-            if _browser_is_closed(e):
+            if _browser_needs_restart(e):
                 logger.warning(
-                    f"Browser fechou inesperadamente — reiniciando (tentativa {attempt}/{MAX_RETRIES})..."
+                    "Aba ou navegador travou — reiniciando para repetir a página "
+                    f"(tentativa {attempt}/{MAX_RETRIES})..."
                 )
                 try:
-                    close_browser(playwright, context)
-                except Exception:
-                    pass
-                try:
-                    playwright, context, page = start_browser()
-                    playwright_ref[0] = playwright
-                    playwright_ref[1] = context
-                    playwright_ref[2] = page
+                    page = restart_browser_in_place(playwright_ref)
+                    install_cleaner(page)
                 except Exception as restart_err:
                     logger.error(f"Falha ao reiniciar browser: {restart_err}")
                     return {"status": "error", "url": url, "page_metadata": None, "posts": []}

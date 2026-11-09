@@ -18,6 +18,7 @@ class RuntimeOptions:
     collect_comments: bool
     export_after_cycle: bool
     restart_browser_every_posts: int
+    processed_posts_since_restart: int = 0
 
 
 def parse_args(argv=None):

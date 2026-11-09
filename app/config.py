@@ -25,6 +25,7 @@ LOCK_FILE = STATE_DIR / "collector.lock"
 # Browser
 HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
 SLOW_MO = int(os.getenv("SLOW_MO", "80"))
+BROWSER_EXECUTABLE_PATH = os.getenv("BROWSER_EXECUTABLE_PATH") or None
 
 # Timing (segundos)
 PAGE_WAIT_MIN = float(os.getenv("PAGE_WAIT_MIN", "4"))
@@ -44,7 +45,7 @@ MAX_REPLY_EXPAND_PER_COMMENT = int(os.getenv("MAX_REPLY_EXPAND_PER_COMMENT", "20
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 RETRY_DELAY_SECONDS = int(os.getenv("RETRY_DELAY_SECONDS", "10"))
 SKIP_RECENT_EMPTY_HOURS = int(os.getenv("SKIP_RECENT_EMPTY_HOURS", "24"))
-RESTART_BROWSER_EVERY_POSTS = int(os.getenv("RESTART_BROWSER_EVERY_POSTS", "0"))
+RESTART_BROWSER_EVERY_POSTS = int(os.getenv("RESTART_BROWSER_EVERY_POSTS", "25"))
 COLLECT_ALBUM_PHOTOS = os.getenv("COLLECT_ALBUM_PHOTOS", "true").lower() == "true"
 
 # Modo contínuo: volta ao primeiro link após terminar todos

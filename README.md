@@ -141,7 +141,22 @@ O scraper usa um perfil persistente do Chromium. O login precisa ser feito **uma
 python -m app.browser.login
 ```
 
-Isso abre o browser, você faz login no Facebook normalmente e fecha a janela. Os cookies ficam salvos em `data/sessions/facebook_chrome_profile/` para todas as execuções futuras. Só é necessário refazer se a sessão expirar.
+Isso abre o Chrome/Edge instalado, você faz login no Facebook normalmente e
+mantém a janela aberta. O comando detecta a sessão e fecha o navegador
+automaticamente. Se o Facebook solicitar código, confirmação ou CAPTCHA,
+conclua essa etapa na própria janela. Os cookies ficam salvos em
+`data/sessions/facebook_chrome_profile/` para todas as execuções futuras. Só é
+necessário refazer se a sessão expirar.
+
+Se o Facebook já estiver autenticado no perfil `Default` do Chrome, é possível
+importar somente os cookies de `facebook.com`, sem copiar cookies de outros
+sites:
+
+```sh
+python -m app.browser.import_chrome_session
+```
+
+O perfil anterior do scraper é preservado em `data/sessions/session_backups/`.
 
 > **Atenção:** Apenas um processo pode usar o perfil persistente por vez. Para fazer testes enquanto o scraper está rodando, pare-o primeiro (`Ctrl+C`).
 
@@ -174,7 +189,7 @@ MAX_REPLY_EXPAND_PER_COMMENT=20
 MAX_RETRIES=3
 RETRY_DELAY_SECONDS=10
 SKIP_RECENT_EMPTY_HOURS=24      # pula posts sem comentários coletados recentemente
-RESTART_BROWSER_EVERY_POSTS=0   # reinicia o browser a cada N posts (0 = desativado)
+RESTART_BROWSER_EVERY_POSTS=25  # reinício preventivo para reduzir acúmulo de memória (0 = desativado)
 COLLECT_ALBUM_PHOTOS=true
 
 # Modo contínuo
@@ -239,7 +254,7 @@ O perfil Chrome precisa ser criado **antes** de usar o Docker (não há interfac
 ```bash
 # No host, com HEADLESS=false
 python -m app.browser.login
-# Faça login no Facebook e feche a janela
+# Faça login no Facebook e aguarde a janela fechar automaticamente
 ```
 
 O perfil fica em `data/sessions/facebook_chrome_profile/` e é montado como volume no container.
